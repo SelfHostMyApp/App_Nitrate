@@ -7,7 +7,7 @@ x-basics: &basics
 services:
   web:
     image: "${NS:-quay.io/nitrate}/web:${NITRATE_VERSION:-develop}"
-    container_name: testing
+    container_name: nitrate
     <<: *basics
 
     environment:
@@ -85,7 +85,7 @@ services:
 
   messagebus:
     image: rabbitmq:3.13.4-alpine
-    container_name: testing-queue
+    container_name: nitrate-queue
     <<: *basics
 
     environment:
