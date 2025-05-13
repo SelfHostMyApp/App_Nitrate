@@ -6,7 +6,7 @@ x-basics: &basics
 
 services:
   web:
-    image: "${NS:-quay.io/nitrate}/web:${VERSION:-develop}"
+    image: "${NS:-quay.io/nitrate}/web:${NITRATE_VERSION:-develop}"
     container_name: testing
     <<: *basics
 
@@ -14,13 +14,13 @@ services:
       - NITRATE_DB_ENGINE=postgresql
       - NITRATE_DB_HOST=postgres
       - NITRATE_DB_PORT=5432
-      - NITRATE_DB_NAME=nitrate
-      - NITRATE_DB_USER=nitrate
+      - NITRATE_DB_NAME=${NITRATE_DB_NAME}
+      - NITRATE_DB_USER=${NITRATE_DB_USER}
       - NITRATE_DB_PASSWORD=${NITRATE_PASSWORD}
       - NITRATE_SECRET_KEY=${NITRATE_SECRET_KEY}
-      - NITRATE_MIGRATE_DB=1
-      - NITRATE_SET_DEFAULT_PERMS=1
-      - NITRATE_SUPERUSER_USERNAME=admin
+      - NITRATE_MIGRATE_DB=${NITRATE_MIGRATE_DB-1}
+      - NITRATE_SET_DEFAULT_PERMS=${NITRATE_SET_DEFAULT_PERMS-1}
+      - NITRATE_SUPERUSER_USERNAME=${NITRATE_SUPERUSER_USERNAME-admin}
       - NITRATE_SUPERUSER_PASSWORD=${ROOT_PASSWORD}
       - NITRATE_SUPERUSER_EMAIL=${ROOT_EMAIL}
       - TZ=${TZ}
@@ -65,8 +65,8 @@ services:
       - NITRATE_DB_ENGINE=postgresql
       - NITRATE_DB_HOST=postgres
       - NITRATE_DB_PORT=5432
-      - NITRATE_DB_NAME=nitrate
-      - NITRATE_DB_USER=nitrate
+      - NITRATE_DB_NAME=${NITRATE_DB_NAME}
+      - NITRATE_DB_USER=${NITRATE_DB_USER}
       - NITRATE_DB_PASSWORD=${NITRATE_PASSWORD}
       - NITRATE_SECRET_KEY=${NITRATE_SECRET_KEY}
       - TZ=${TZ}
