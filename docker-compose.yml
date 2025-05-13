@@ -1,85 +1,108 @@
-version: "3"
-
-# Please note that, this container-compose is only for test latest image built
-# from development branch and prod image built from released version.
+# Common base configuration that all services inherit
+x-basics: &basics
+  env_file:
+    - .env
+  restart: unless-stopped
 
 services:
-  db:
-    image: "mariadb:11.4.2"
-    volumes:
-    - "nitrate_db_data:/var/lib/mysql"
-    restart: always
+  web:
+    image: "${NS:-quay.io/nitrate}/web:${VERSION:-develop}"
+    container_name: testing
+    <<: *basics
+
     environment:
-      MYSQL_DATABASE: nitrate
-      MYSQL_ROOT_PASSWORD: nitrate
-    command: >-
-      --character-set-server=utf8mb4
-      --collation-server=utf8mb4_unicode_ci
+      - NITRATE_DB_ENGINE=postgresql
+      - NITRATE_DB_HOST=postgres
+      - NITRATE_DB_PORT=5432
+      - NITRATE_DB_NAME=nitrate
+      - NITRATE_DB_USER=nitrate
+      - NITRATE_DB_PASSWORD=${NITRATE_PASSWORD}
+      - NITRATE_SECRET_KEY=${NITRATE_SECRET_KEY}
+      - NITRATE_MIGRATE_DB=1
+      - NITRATE_SET_DEFAULT_PERMS=1
+      - NITRATE_SUPERUSER_USERNAME=admin
+      - NITRATE_SUPERUSER_PASSWORD=${ROOT_PASSWORD}
+      - NITRATE_SUPERUSER_EMAIL=${ROOT_EMAIL}
+      - TZ=${TZ}
+
+    volumes:
+      - ~/volumes/nitrate/config:/project/nitrate-config
+      - ~/volumes/nitrate/uploads:/code/uploads
+      - ~/volumes/nitrate/logs:/var/log/httpd
+
+    networks:
+      core:
+        ipv4_address: 172.20.0.60
+      internal:
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      messagebus:
+        condition: service_healthy
+
     healthcheck:
-      test: mysqladmin ping -uroot -pnitrate
-      interval: 5s
-      timeout: 2s
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 15s
       retries: 3
-      start_period: 5s
+      start_period: 60s
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nitrate.rule=Host(`${NITRATE_SUBDOMAIN}.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.nitrate.entrypoints=websecure"
+      - "traefik.http.routers.nitrate.middlewares=cloudflare-ipallowlist@file"
+      - "traefik.http.routers.nitrate.tls.certresolver=cloudflare"
+      - "traefik.http.services.nitrate.loadbalancer.server.port=8080"
+
+  worker:
+    image: "${NS:-quay.io/nitrate}/worker:${VERSION:-develop}"
+    container_name: testing-worker
+    <<: *basics
+
+    environment:
+      - NITRATE_DB_ENGINE=postgresql
+      - NITRATE_DB_HOST=postgres
+      - NITRATE_DB_PORT=5432
+      - NITRATE_DB_NAME=nitrate
+      - NITRATE_DB_USER=nitrate
+      - NITRATE_DB_PASSWORD=${NITRATE_PASSWORD}
+      - NITRATE_SECRET_KEY=${NITRATE_SECRET_KEY}
+      - TZ=${TZ}
+
+    volumes:
+      - ~/volumes/nitrate/config:/project/nitrate-config
+
+    networks:
+      core:
+        ipv4_address: 172.20.0.61
+      internal:
+
+    depends_on:
+      messagebus:
+        condition: service_healthy
 
   messagebus:
     image: rabbitmq:3.13.4-alpine
-    restart: always
+    container_name: testing-queue
+    <<: *basics
+
     environment:
-      RABBITMQ_DEFAULT_VHOST: myvhost
+      - RABBITMQ_DEFAULT_VHOST=myvhost
+      - TZ=${TZ}
+
+    networks:
+      core:
+        ipv4_address: 172.20.0.62
+      internal:
+
     healthcheck:
-      test: rabbitmq-diagnostic -q ping
-      interval: 5s
-      timeout: 5s
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 15s
       retries: 3
-      start_period: 5s
-
-  worker:
-    depends_on:
-    - messagebus
-    restart: always
-    image: "${NS:-quay.io/nitrate}/worker:${VERSION:-develop}"
-    volumes:
-    - "./compose/custom_settings.py:/project/nitrate-config/nitrate_custom_conf.py:Z"
-    environment:
-      NITRATE_DB_ENGINE: mysql
-      NITRATE_DB_HOST: db
-      NITRATE_DB_PORT: 3306
-      NITRATE_DB_NAME: nitrate
-      NITRATE_DB_USER: root
-      NITRATE_SECRET_KEY: do-not-use-this-key-for-worker-production
-
-  web:
-    depends_on:
-    - db
-    - messagebus
-    restart: always
-    image: "${NS:-quay.io/nitrate}/web:${VERSION:-develop}"
-    ports:
-    - "8001:8080"
-    volumes:
-    - "./compose/custom_settings.py:/project/nitrate-config/nitrate_custom_conf.py:Z"
-    - "nitrate_uploads:/code/uploads:Z"
-    - "nitrate_httpd_logs:/var/log/httpd:Z"
-    environment:
-      NITRATE_DB_ENGINE: mysql
-      NITRATE_DB_HOST: db
-      NITRATE_DB_PORT: 3306
-      NITRATE_DB_NAME: nitrate
-      NITRATE_DB_USER: root
-      NITRATE_SECRET_KEY: do-not-use-this-key-for-production
-      NITRATE_MIGRATE_DB: 1
-      NITRATE_SET_DEFAULT_PERMS: 1
-      NITRATE_SUPERUSER_USERNAME: admin
-      NITRATE_SUPERUSER_PASSWORD: admin
-      NITRATE_SUPERUSER_EMAIL: admin@example.com
-    healthcheck:
-      test: curl -L http://127.0.0.1:8080 | grep "<title>Nitrate</title>"
-      interval: 5s
-      timeout: 2s
-      retries: 3
-      start_period: 5s
-
+      start_period: 60s
 
 # Run `docker inspect web` to see volume directory on host.
 
