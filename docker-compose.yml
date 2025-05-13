@@ -6,7 +6,7 @@ x-basics: &basics
 
 services:
   web:
-    image: "${NS:-quay.io/nitrate}/web:${VERSION:-develop}"
+    image: "${NS:-quay.io/nitrate}/web:${NITRATE_VERSION:-develop}"
     container_name: testing
     <<: *basics
 
@@ -63,10 +63,10 @@ services:
 
     environment:
       - NITRATE_DB_ENGINE=postgresql
-      - NITRATE_DB_HOST=postgres
-      - NITRATE_DB_PORT=5432
-      - NITRATE_DB_NAME=nitrate
-      - NITRATE_DB_USER=nitrate
+      - NITRATE_DB_HOST=${POSTGRES_HOST:-postgres}
+      - NITRATE_DB_PORT=${POSTGRES_PORT:-5432}
+      - NITRATE_DB_NAME=${NITRATE_DB_NAME:-nitrate}
+      - NITRATE_DB_USER=${NITRATE_DB_USER:-nitrate}
       - NITRATE_DB_PASSWORD=${NITRATE_PASSWORD}
       - NITRATE_SECRET_KEY=${NITRATE_SECRET_KEY}
       - TZ=${TZ}
