@@ -35,14 +35,18 @@ services:
         ipv4_address: 172.20.0.60
       internal:
 
+
     depends_on:
       postgres:
         condition: service_healthy
       messagebus:
         condition: service_healthy
 
+    ports:
+      - "${NITRATE_PORT}:8080"
+
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080" ]
       interval: 30s
       timeout: 15s
       retries: 3
@@ -79,6 +83,7 @@ services:
         ipv4_address: 172.20.0.61
       internal:
 
+
     depends_on:
       messagebus:
         condition: service_healthy
@@ -97,8 +102,9 @@ services:
         ipv4_address: 172.20.0.62
       internal:
 
+
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 30s
       timeout: 15s
       retries: 3
