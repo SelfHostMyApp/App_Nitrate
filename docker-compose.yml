@@ -11,7 +11,7 @@ services:
     <<: *basics
 
     environment:
-      - NITRATE_DB_ENGINE=postgresql
+      - NITRATE_DB_ENGINE=pgsql
       - NITRATE_DB_HOST=postgres
       - NITRATE_DB_PORT=5432
       - NITRATE_DB_NAME=${NITRATE_DB_NAME}
@@ -62,11 +62,11 @@ services:
 
   worker:
     image: "${NS:-quay.io/nitrate}/worker:${VERSION:-develop}"
-    container_name: testing-worker
+    container_name: nitrate-worker
     <<: *basics
 
     environment:
-      - NITRATE_DB_ENGINE=postgresql
+      - NITRATE_DB_ENGINE=pgsql
       - NITRATE_DB_HOST=${POSTGRES_HOST:-postgres}
       - NITRATE_DB_PORT=${POSTGRES_PORT:-5432}
       - NITRATE_DB_NAME=${NITRATE_DB_NAME:-nitrate}
