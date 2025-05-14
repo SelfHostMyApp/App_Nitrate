@@ -35,7 +35,6 @@ services:
         ipv4_address: 172.20.0.60
       internal:
 
-
     depends_on:
       postgres:
         condition: service_healthy
@@ -46,7 +45,7 @@ services:
       - "${NITRATE_PORT}:8080"
 
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
       interval: 30s
       timeout: 15s
       retries: 3
@@ -59,6 +58,8 @@ services:
       - "traefik.http.routers.nitrate.middlewares=cloudflare-ipallowlist@file"
       - "traefik.http.routers.nitrate.tls.certresolver=cloudflare"
       - "traefik.http.services.nitrate.loadbalancer.server.port=8080"
+      - "traefik.http.routers.nitrate.middlewares=${NITRATE_AUTH:+nitrate-auth}"
+      - "traefik.http.middlewares.nitrate-auth.basicauth.users=${NITRATE_AUTH}"
 
   worker:
     image: "${NS:-quay.io/nitrate}/worker:${VERSION:-develop}"
@@ -83,7 +84,6 @@ services:
         ipv4_address: 172.20.0.61
       internal:
 
-
     depends_on:
       messagebus:
         condition: service_healthy
@@ -102,9 +102,8 @@ services:
         ipv4_address: 172.20.0.62
       internal:
 
-
     healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 30s
       timeout: 15s
       retries: 3
