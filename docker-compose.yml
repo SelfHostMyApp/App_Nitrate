@@ -5,7 +5,7 @@ x-basics: &basics
   restart: unless-stopped
 
 services:
-  web:
+  nitrate:
     image: "${NS:-quay.io/nitrate}/web:${NITRATE_VERSION:-develop}"
     container_name: nitrate
     <<: *basics
@@ -18,8 +18,8 @@ services:
       - NITRATE_DB_USER=${NITRATE_DB_USER}
       - NITRATE_DB_PASSWORD=${NITRATE_PASSWORD}
       - NITRATE_SECRET_KEY=${NITRATE_SECRET_KEY}
-      - NITRATE_MIGRATE_DB=${NITRATE_MIGRATE_DB-1}
-      - NITRATE_SET_DEFAULT_PERMS=${NITRATE_SET_DEFAULT_PERMS-1}
+      - NITRATE_MIGRATE_DB=${NITRATE_MIGRATE_DB-yes}
+      - NITRATE_SET_DEFAULT_PERMS=${NITRATE_SET_DEFAULT_PERMS-yes}
       - NITRATE_SUPERUSER_USERNAME=${NITRATE_SUPERUSER_USERNAME-admin}
       - NITRATE_SUPERUSER_PASSWORD=${ROOT_PASSWORD}
       - NITRATE_SUPERUSER_EMAIL=${ROOT_EMAIL}
@@ -35,17 +35,18 @@ services:
         ipv4_address: 172.20.0.60
       internal:
 
+
     depends_on:
       postgres:
         condition: service_healthy
-      messagebus:
+      nitrate-queue:
         condition: service_healthy
 
     ports:
       - "${NITRATE_PORT}:8080"
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080" ]
       interval: 30s
       timeout: 15s
       retries: 3
@@ -61,7 +62,7 @@ services:
       - "traefik.http.routers.nitrate.middlewares=${NITRATE_AUTH:+nitrate-auth}"
       - "traefik.http.middlewares.nitrate-auth.basicauth.users=${NITRATE_AUTH}"
 
-  worker:
+  nitrate-worker:
     image: "${NS:-quay.io/nitrate}/worker:${VERSION:-develop}"
     container_name: nitrate-worker
     <<: *basics
@@ -84,11 +85,12 @@ services:
         ipv4_address: 172.20.0.61
       internal:
 
+
     depends_on:
-      messagebus:
+      nitrate-queue:
         condition: service_healthy
 
-  messagebus:
+  nitrate-queue:
     image: rabbitmq:3.13.4-alpine
     container_name: nitrate-queue
     <<: *basics
@@ -102,8 +104,9 @@ services:
         ipv4_address: 172.20.0.62
       internal:
 
+
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 30s
       timeout: 15s
       retries: 3
